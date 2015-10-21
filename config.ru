@@ -1,4 +1,10 @@
+require 'open3'
+
 class BuildServer
+  class GitPullError < StandardError ; end
+  class JekyllBuildError < StandardError ; end
+  class S3SyncError < StandardError ; end
+
   def call(env)
     request = Rack::Request.new(env)
 
@@ -10,14 +16,16 @@ class BuildServer
         request.params['bucket_name'],
       )
     else
-      respond(404, '')
+      respond(404, 'Command Not Found')
     end
   end
 
   def jekyll(website_id, deployment_id, branch_name, bucket_name)
     begin
-      raise ArgumentError unless website_id.match(/\A\d{1,9}\z/) && deployment_id.match(/\A\d{1,9}\z/)
-      # raise ArgumentError if `git check-ref-format #{branch_name} exits poorly
+      raise ArgumentError unless website_id.match(/\A\d{1,9}\z/)
+      raise ArgumentError unless deployment_id.match(/\A\d{1,9}\z/)
+      # raise ArgumentError 'invalid branch_name' if `git check-ref-format #{branch_name} exits poorly
+      # raise ArgumentError 'invalid bucket_name' if ...
 
       repository_pathname = Pathname.new("/repos/#{website_id}.git")
       deployment_pathname = Pathname.new("/sites/#{deployment_id}")
@@ -25,17 +33,36 @@ class BuildServer
       raise ArgumentError unless repository_pathname.exist?
       raise ArgumentError unless deployment_pathname.exist?
 
-      `cd #{deployment_pathname}; git pull #{repository_pathname} #{branch_name}`
-      `jekyll build --safe --source #{deployment_pathname} --destination #{deployment_pathname.join('_site')}`
-      `aws s3 sync --acl public-read #{deployment_pathname.join('_site')} s3://#{bucket_name}`
+      perform("cd #{deployment_pathname}; git pull #{repository_pathname} #{branch_name}", raise_with: GitPullError)
+      perform("jekyll build --safe --source #{deployment_pathname} --destination #{deployment_pathname.join('_site')}", raise_with: JekyllBuildError)
+      perform("aws s3 sync --acl public-read #{deployment_pathname.join('_site')} s3://#{bucket_name}", raise_with: S3SyncError)
 
-      respond(200, 'ok')
+      respond(200, 'Website successfully generated and synced')
+    rescue GitPullError
+      respond(500, 'Git Pull Error: There was a problem pulling from website repository')
+    rescue JekyllBuildError
+      respond(500, 'Jekyll Build Error: There was a problem compiling your website')
+    rescue S3SyncError
+      respond(500, 'S3 Sync Error: There was a problem syncing your website')
     rescue
-      respond(500, 'oops')
+      respond(500, 'There was a problem generating your website')
     end
   end
 
   private
+
+  def perform(command, raise_with: StandardError)
+    stdin, stdout, stderr, wait_thread = Open3.popen3(command)
+    stdin.close
+    stdout_log = stdout.read
+    stdout.close
+    stderr_log = stderr.read
+    stderr.close
+
+    unless wait_thread.value.success?
+      raise raise_with, stderr
+    end
+  end
 
   def respond(status, body)
     [status, {'Content-Type' => 'text/html'}, [body]]
