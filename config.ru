@@ -35,7 +35,7 @@ class BuildServer
 
       perform("cd #{deployment_pathname}; git pull #{repository_pathname} #{branch_name}", raise_with: GitPullError)
       perform("jekyll build --safe --source #{deployment_pathname} --destination #{deployment_pathname.join('_site')}", raise_with: JekyllBuildError)
-      perform("aws s3 sync --acl public-read #{deployment_pathname.join('_site')} s3://#{bucket_name}", raise_with: S3SyncError)
+      perform("aws s3 sync --acl public-read --delete #{deployment_pathname.join('_site')} s3://#{bucket_name}", raise_with: S3SyncError)
 
       respond(200, 'Website successfully generated and synced')
     rescue GitPullError
