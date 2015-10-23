@@ -24,8 +24,8 @@ class BuildServer
     begin
       raise ArgumentError unless website_id.match(/\A\d{1,9}\z/)
       raise ArgumentError unless deployment_id.match(/\A\d{1,9}\z/)
-      branch_name = perform("git check-ref-format #{branch_name}", raise_with: ArgumentError)
-      raise ArgumentError unless bucket_name.match(/\A[0-9a-f]{6}\.staticwebsitemanager\z/)
+      branch_name = perform("git check-ref-format --branch #{branch_name}", raise_with: ArgumentError)
+      raise ArgumentError unless bucket_name.match(/\A[0-9a-f]{8}\.staticwebsitemanager\z/)
 
       repository_pathname = Pathname.new("/repos/#{website_id}.git")
       deployment_pathname = Pathname.new("/sites/#{deployment_id}")
