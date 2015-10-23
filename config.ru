@@ -33,7 +33,7 @@ class BuildServer
       raise ArgumentError unless repository_pathname.exist?
       raise ArgumentError unless deployment_pathname.exist?
 
-      perform("cd #{deployment_pathname}; git pull #{repository_pathname} #{branch_name}", raise_with: GitPullError)
+      perform("git pull #{repository_pathname} #{branch_name}", chdir: deployment_pathname.to_s, raise_with: GitPullError)
       perform("jekyll build --safe --source #{deployment_pathname} --destination #{deployment_pathname.join('_site')}", raise_with: JekyllBuildError)
       perform("aws s3 sync --acl public-read --delete #{deployment_pathname.join('_site')} s3://#{bucket_name}", raise_with: S3SyncError)
 
@@ -51,8 +51,9 @@ class BuildServer
 
   private
 
-  def perform(command, raise_with: StandardError)
-    stdin, stdout, stderr, wait_thread = Open3.popen3(command)
+  def perform(command, args = {})
+    raise_with = args.delete(:raise_with)
+    stdin, stdout, stderr, wait_thread = Open3.popen3(command, args)
     stdin.close
     stdout_log = stdout.read
     stdout.close
