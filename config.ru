@@ -1,6 +1,7 @@
 require 'open3'
 
 class BuildServer
+  class GitConfigError < StandardError ; end
   class GitPullError < StandardError ; end
   class JekyllBuildError < StandardError ; end
   class S3SyncError < StandardError ; end
@@ -33,11 +34,16 @@ class BuildServer
       raise ArgumentError unless repository_pathname.exist?
       raise ArgumentError unless deployment_pathname.exist?
 
+      perform("git config user.email \"support@staticwebsitemanager.com\"", chdir: deployment_pathname.to_s, raise_with: GitConfigError)
+      perform("git config user.name \"Static Website Manager\"", chdir: deployment_pathname.to_s, raise_with: GitConfigError)
+      perform("git pull #{repository_pathname} #{branch_name}", chdir: deployment_pathname.to_s, raise_with: GitPullError)
       perform("git pull #{repository_pathname} #{branch_name}", chdir: deployment_pathname.to_s, raise_with: GitPullError)
       perform("jekyll build --safe --source #{deployment_pathname} --destination #{deployment_pathname.join('_site')}", raise_with: JekyllBuildError)
       perform("aws s3 sync --acl public-read --delete #{deployment_pathname.join('_site')} s3://#{bucket_name}", raise_with: S3SyncError)
 
       respond(200, 'Website successfully generated and synced')
+    rescue GitConfigError
+      respond(500, 'Git Config Error: There was a problem configuring the deployment repository.')
     rescue GitPullError
       respond(500, 'Git Pull Error: There was a problem pulling from website repository')
     rescue JekyllBuildError
