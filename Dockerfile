@@ -4,8 +4,7 @@ RUN pip install awscli
 ENV home /build
 RUN mkdir $home
 WORKDIR $home
-ADD Gemfile $home/Gemfile
-ADD Gemfile.lock $home/Gemfile.lock
+COPY Gemfile $home/Gemfile
+COPY Gemfile.lock $home/Gemfile.lock
 RUN bundle install
-EXPOSE 9292
-ADD . $home
+COPY . $home
