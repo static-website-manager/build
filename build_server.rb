@@ -12,8 +12,10 @@ class BuildServer
 
     case request.path
     when '/jekyll'
+      puts "Starting Jekyll Build Job with options #{build_options}"
       respond_with *JekyllBuild.perform(*build_options)
     else
+      puts "No Command Found"
       respond_with 404, 'Command Not Found'
     end
   end
