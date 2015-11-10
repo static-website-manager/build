@@ -8,5 +8,6 @@ COPY Gemfile $home/Gemfile
 COPY Gemfile.lock $home/Gemfile.lock
 RUN bundle install
 COPY . $home
-RUN adduser --system --uid 1448 --ingroup root git
+RUN addgroup --system --gid 1448 git
+RUN adduser --system --uid 1448 --ingroup git git
 USER git
