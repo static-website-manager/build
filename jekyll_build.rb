@@ -27,7 +27,10 @@ class JekyllBuild
     clone_path = Pathname.new(File.join('/tmp', "clone_#{rand(1000)}_#{Time.now.to_i}"))
 
     begin
-      popen("git clone --branch #@branch_name --depth 1 file://#@repository_pathname #{clone_path}", raise_with: GitCloneError)
+      # Unsure why this will not work, as it does through bash, sh, and bash->irb
+      # popen("git clone --branch #@branch_name --depth 1 file://#@repository_pathname #{clone_path}", raise_with: GitCloneError)
+      popen("git clone file://#@repository_pathname #{clone_path}", raise_with: GitCloneError)
+      popen("git checkout #@branch_name", chdir: clone_path, raise_with: GitCloneError)
       popen("jekyll build --safe --source #{clone_path} --destination #{clone_path.join('_site')}", raise_with: JekyllBuildError)
       popen("aws s3 sync --acl public-read --delete #{clone_path.join('_site')} s3://#@bucket_name", raise_with: S3SyncError)
 
