@@ -7,7 +7,7 @@ class BuildServer
     build_options = [
       request.params['website_id'],
       request.params['branch_name'],
-      request.params['bucket_name'],
+      request.params['commit_id'],
     ]
 
     case request.path
