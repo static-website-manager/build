@@ -63,7 +63,7 @@ class JekyllBuild
     rescue S3SyncError
       [500, 'Sync Error: There was a problem deploying your static website to AWS S3.']
     rescue Exception => e
-      $stderr.puts e
+      $stderr.puts e.message
       raise e
     end
   end
