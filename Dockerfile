@@ -1,5 +1,6 @@
 FROM ruby:2.2.3
-RUN apt-get update -qq && apt-get install -y build-essential git nodejs
+RUN apt-get update -qq && apt-get install -y build-essential git nodejs python-pip
+RUN pip install awscli
 ENV home /build
 RUN mkdir $home
 WORKDIR $home
