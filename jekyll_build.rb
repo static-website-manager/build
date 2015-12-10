@@ -38,10 +38,9 @@ class JekyllBuild
     end
 
     begin
-      popen('git config user.email "support@staticwebsitemanager.com"', chdir: @website_pathname, raise_with: GitCloneError)
-      popen('git config user.name "Static Website Manager"', chdir: @website_pathname, raise_with: GitCloneError)
-
       if @website_pathname.exist?
+	popen('git config user.email "support@staticwebsitemanager.com"', chdir: @website_pathname, raise_with: GitCloneError)
+	popen('git config user.name "Static Website Manager"', chdir: @website_pathname, raise_with: GitCloneError)
         popen("git pull origin #@branch_name", chdir: @website_pathname, raise_with: GitCloneError)
       else
         # Unsure why this will not work, as it does through bash, sh, and bash->irb
