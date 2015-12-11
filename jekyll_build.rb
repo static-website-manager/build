@@ -39,23 +39,13 @@ class JekyllBuild
 
     begin
       if @website_pathname.exist?
-	popen('git config user.email "support@staticwebsitemanager.com"', chdir: @website_pathname, raise_with: GitCloneError)
-	popen('git config user.name "Static Website Manager"', chdir: @website_pathname, raise_with: GitCloneError)
-
-	begin
-	  popen("git pull origin #@branch_name", chdir: @website_pathname, raise_with: GitCloneError)
-	rescue GitCloneError
-	  popen("rm -rf #@website_pathname", raise_with: GitCloneError)
-	  popen("git clone file://#@repository_pathname #@website_pathname", raise_with: GitCloneError)
-	  popen("git checkout #@branch_name", chdir: @website_pathname, raise_with: GitCloneError)
-	end
-      else
-        # Unsure why this will not work, as it does through bash, sh, and bash->irb
-        # popen("git clone --branch #@branch_name --depth 1 file://#@repository_pathname #@website_pathname", raise_with: GitCloneError)
-        popen("git clone file://#@repository_pathname #@website_pathname", raise_with: GitCloneError)
-        popen("git checkout #@branch_name", chdir: @website_pathname, raise_with: GitCloneError)
+	popen("rm -rf #@website_pathname", raise_with: GitCloneError)
       end
 
+      # Unsure why this will not work, as it does through bash, sh, and bash->irb
+      # popen("git clone --branch #@branch_name --depth 1 file://#@repository_pathname #@website_pathname", raise_with: GitCloneError)
+      popen("git clone file://#@repository_pathname #@website_pathname", raise_with: GitCloneError)
+      popen("git checkout #@branch_name", chdir: @website_pathname, raise_with: GitCloneError)
       popen("jekyll build --drafts --future --incremental --safe --source #@website_pathname --destination #@compiled_website_pathname", raise_with: JekyllBuildError)
       popen("echo #@commit_id > #@compiled_website_version_pathname")
 
